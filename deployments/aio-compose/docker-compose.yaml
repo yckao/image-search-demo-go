@@ -1,0 +1,94 @@
+name: image-search-demo-go
+
+services:
+  database:
+    image: pgvector/pgvector:pg17
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    build:
+      context: minio
+      dockerfile: Dockerfile
+    ports:
+      - 127.0.0.1:9000:9000
+      - 127.0.0.1:9001:9001
+    volumes:
+      - minio-data:/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migration:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+      target: migration
+    env_file:
+      - .env
+    environment:
+      - PGHOST=database
+    depends_on:
+      database:
+        condition: service_healthy
+
+  clip-service:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+      target: clip-service
+    env_file:
+      - .env
+    volumes:
+      - ../../assets/clip_model:/model/
+    ports:
+      - 127.0.0.1:50051:50051
+
+  aio-service:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+      target: aio-service
+    env_file:
+      - .env
+    environment:
+      - PGHOST=database
+      - CLIP_GRPC_ADDR=clip-service:50051
+      - S3_ENDPOINT_URL=http://minio:9000
+    ports:
+      - 127.0.0.1:8080:8080
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      database:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  dataset:
+    build:
+      context: ../../assets/dataset
+      dockerfile: Dockerfile
+    network_mode: host
+    profiles: [dataset]
+
+volumes:
+  pgdata:
+  minio-data:

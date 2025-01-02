@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package clip;
+
+option go_package = "github.com/yckao/pkg/clients/clip";
+
+service CLIPService {
+    rpc ImageEmbedding(stream ImageChunk) returns (EmbeddingResponse) {}
+    rpc TextEmbedding(Text) returns (EmbeddingResponse) {}
+}
+
+message ImageChunk {
+    bytes data = 1;
+}
+
+message Text {
+    string text = 1;
+}
+
+message EmbeddingResponse {
+    string model_name = 1;
+    repeated float embedding = 2;
+}
