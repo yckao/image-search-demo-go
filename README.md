@@ -47,13 +47,13 @@ cp .env.example .env
 3. Start the services using Docker Compose:
 
 ```bash
-docker compose -f hack/compose/docker-compose.yaml up -d
+docker compose -f deployments/aio-compose/docker-compose.yaml up -d
 ```
 
 4. [Opitional] Upload assets
 
 ```bash
-docker compose -f hack/compose/docker-compose.yaml up -d dataset
+docker compose -f deployments/aio-compose/docker-compose.yaml up dataset
 ```
 
 5. Open the API documentation at http://localhost:8080/swagger/index.html
@@ -61,7 +61,7 @@ docker compose -f hack/compose/docker-compose.yaml up -d dataset
 ### Clean up
 
 ```bash
-docker compose -f hack/compose/docker-compose.yaml down -v
+docker compose -f deployments/aio-compose/docker-compose.yaml down -v
 ```
 
 ## Future Work
